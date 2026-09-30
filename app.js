@@ -1,8 +1,9 @@
 const input = document.getElementById("url");
 const button = document.getElementById("shorten-btn");
 const result = document.getElementById("result");
+const year = document.getElementById("year");
 
-document.getElementById("year").textContent = new Date().getFullYear();
+year.textContent = new Date().getFullYear();
 
 function encodeUrl(url) {
   return btoa(unescape(encodeURIComponent(url)))
@@ -14,22 +15,24 @@ function encodeUrl(url) {
 function decodeUrl(value) {
   try {
     return decodeURIComponent(
-      escape(atob(value.replace(/-/g, "+").replace(/_/g, "/")))
+      escape(
+        atob(
+          value
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+        )
+      )
     );
   } catch {
     return null;
   }
 }
 
-function getBaseUrl() {
-  return window.location.href.split("#")[0];
-}
-
 function shorten() {
   const url = input.value.trim();
 
   if (!url) {
-    showResult("enter a URL", true);
+    showResult("Enter a URL.", true);
     return;
   }
 
@@ -37,22 +40,38 @@ function shorten() {
     const parsed = new URL(url);
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
-      showResult("only http and https URLs are supported", true);
+      showResult("Only HTTP and HTTPS URLs are supported.", true);
       return;
     }
   } catch {
-    showResult("that's not a valid URL", true);
+    showResult("That's not a valid URL.", true);
     return;
   }
 
   const code = encodeUrl(url);
-  const shortUrl = `${getBaseUrl()}#${code}`;
+
+  const baseUrl = window.location.href.split("#")[0];
+  const shortUrl = `${baseUrl}#${code}`;
 
   showResult(`
-    <a href="${shortUrl}" target="_blank" rel="noopener noreferrer">
-      ${shortUrl}
-    </a>
+    <div class="result-content">
+      <a href="${shortUrl}" target="_blank" rel="noopener noreferrer">
+        ${shortUrl}
+      </a>
+      <button class="copy-btn" id="copy-btn">Copy</button>
+    </div>
   `);
+
+  document.getElementById("copy-btn").addEventListener("click", async () => {
+    await navigator.clipboard.writeText(shortUrl);
+
+    const copyButton = document.getElementById("copy-btn");
+    copyButton.textContent = "Copied";
+
+    setTimeout(() => {
+      copyButton.textContent = "Copy";
+    }, 1500);
+  });
 }
 
 function showResult(content, error = false) {
@@ -62,7 +81,7 @@ function showResult(content, error = false) {
 
 button.addEventListener("click", shorten);
 
-input.addEventListener("keydown", event => {
+input.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     shorten();
   }
