@@ -2,18 +2,34 @@ const input = document.getElementById("url");
 const button = document.getElementById("shorten-btn");
 const result = document.getElementById("result");
 
-document.getElementById("year").textContent =
-  new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();
 
+function encodeUrl(url) {
+  return btoa(unescape(encodeURIComponent(url)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
 
-async function shortenUrl() {
+function decodeUrl(value) {
+  try {
+    return decodeURIComponent(
+      escape(atob(value.replace(/-/g, "+").replace(/_/g, "/")))
+    );
+  } catch {
+    return null;
+  }
+}
 
+function getBaseUrl() {
+  return window.location.href.split("#")[0];
+}
+
+function shorten() {
   const url = input.value.trim();
 
-  result.className = "";
-
   if (!url) {
-    showError("enter a URL");
+    showResult("enter a URL", true);
     return;
   }
 
@@ -21,93 +37,43 @@ async function shortenUrl() {
     const parsed = new URL(url);
 
     if (!["http:", "https:"].includes(parsed.protocol)) {
-      showError("only http and https URLs are supported");
+      showResult("only http and https URLs are supported", true);
       return;
     }
-
   } catch {
-    showError("that's not a valid URL");
+    showResult("that's not a valid URL", true);
     return;
   }
 
+  const code = encodeUrl(url);
+  const shortUrl = `${getBaseUrl()}#${code}`;
 
-  button.disabled = true;
-  button.textContent = "...";
-
-
-  try {
-
-    const response = await fetch("/api/shorten", {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        url
-      })
-    });
-
-
-    const data = await response.json();
-
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || "something went wrong"
-      );
-    }
-
-
-    result.innerHTML = `
-      <a
-        href="${escapeHtml(data.shortUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >${escapeHtml(data.shortUrl)}</a>
-    `;
-
-    result.className = "show";
-
-
-  } catch (error) {
-
-    showError(
-      error.message || "something went wrong"
-    );
-
-  } finally {
-
-    button.disabled = false;
-    button.textContent = "Shorten";
-
-  }
+  showResult(`
+    <a href="${shortUrl}" target="_blank" rel="noopener noreferrer">
+      ${shortUrl}
+    </a>
+  `);
 }
 
-
-function showError(message) {
-
-  result.textContent = message;
-
-  result.className = "show error";
+function showResult(content, error = false) {
+  result.innerHTML = content;
+  result.className = error ? "show error" : "show";
 }
 
+button.addEventListener("click", shorten);
 
-function escapeHtml(value) {
-
-  const div = document.createElement("div");
-
-  div.textContent = value;
-
-  return div.innerHTML;
-}
-
-
-input.addEventListener("keydown", (event) => {
-
+input.addEventListener("keydown", event => {
   if (event.key === "Enter") {
-    shortenUrl();
+    shorten();
   }
-
 });
+
+const hash = window.location.hash.slice(1);
+
+if (hash) {
+  const url = decodeUrl(hash);
+
+  if (url) {
+    window.location.replace(url);
+  }
+}
