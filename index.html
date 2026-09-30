@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Shorten / URL Shortener</title>
+
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>↗</text></svg>">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <main class="container">
+
+    <header>
+      <div class="status">
+        <span class="dot"></span>
+        Online
+      </div>
+
+      <h1>
+        Shorten <span class="accent">/ URL shortener</span>
+      </h1>
+
+      <p class="bio">
+        A small, simple URL shortener.
+        Paste a link below and get a shorter one.
+      </p>
+    </header>
+
+
+    <section class="shortener-section">
+
+      <div class="section-label">
+        Shorten a URL
+      </div>
+
+      <div class="shortener">
+
+        <div class="input-wrap">
+          <span class="prompt">›</span>
+
+          <input
+            id="url"
+            type="url"
+            placeholder="https://example.com/..."
+            autocomplete="off"
+          >
+        </div>
+
+        <button id="shorten-btn" onclick="shortenUrl()">
+          Shorten
+        </button>
+
+      </div>
+
+      <div id="result"></div>
+
+    </section>
+
+
+    <section class="recent-section">
+
+      <div class="section-label">
+        About
+      </div>
+
+      <div class="about">
+        <p>
+          No accounts. No nonsense.
+          Just short links.
+        </p>
+
+        <span class="tech">
+          Node.js · Express
+        </span>
+      </div>
+
+    </section>
+
+
+    <footer>
+
+      <span>
+        © <span id="year">2026</span> xlueisadev
+      </span>
+
+      <span class="footer-right">
+        <span class="green">//</span> built from scratch
+      </span>
+
+    </footer>
+
+  </main>
+
+  <script src="app.js"></script>
+
+</body>
+
+</html>
