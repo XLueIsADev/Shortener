@@ -1,111 +1,66 @@
 const express = require("express");
+const crypto = require("crypto");
 const path = require("path");
 
 const app = express();
+const port = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 3000;
+const links = new Map();
 
 app.use(express.json());
 
-/* Serve index.html, style.css, app.js, etc. */
-app.use(express.static(__dirname));
-
-
-/* =========================
-   URL STORAGE
-========================= */
-
-const urls = new Map();
-
-const CODE_LENGTH = 6;
-
-const ALPHABET =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-
-function generateCode() {
-
-  let code = "";
-
-  for (let i = 0; i < CODE_LENGTH; i++) {
-
-    code += ALPHABET[
-      Math.floor(
-        Math.random() * ALPHABET.length
-      )
-    ];
-
-  }
-
-  return code;
-}
-
-
-/* =========================
-   SHORTEN API
-========================= */
-
 app.post("/api/shorten", (req, res) => {
-
   const { url } = req.body;
 
-  if (!url) {
+  if (!url || typeof url !== "string") {
+    return res.status(400).json({
+      error: "A URL is required"
+    });
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return res.status(400).json({
+        error: "Only HTTP and HTTPS URLs are supported"
+      });
+    }
+  } catch {
     return res.status(400).json({
       error: "Invalid URL"
     });
   }
 
-  let code = generateCode();
+  let code;
 
-  while (urls.has(code)) {
-    code = generateCode();
-  }
+  do {
+    code = crypto.randomBytes(4).toString("hex");
+  } while (links.has(code));
 
-  urls.set(code, url);
-
-  const protocol =
-    req.headers["x-forwarded-proto"] ||
-    req.protocol;
-
-  const host = req.get("host");
-
-  const shortUrl =
-    `${protocol}://${host}/${code}`;
+  links.set(code, url);
 
   res.json({
-    shortUrl
+    shortUrl: `${req.protocol}://${req.get("host")}/${code}`
   });
-
 });
-
-
-/* =========================
-   REDIRECT
-========================= */
 
 app.get("/:code", (req, res) => {
+  const url = links.get(req.params.code);
 
-  const target = urls.get(req.params.code);
-
-  if (!target) {
-    return res
-      .status(404)
-      .send("Short URL not found.");
+  if (!url) {
+    return res.status(404).send("Link not found");
   }
 
-  res.redirect(target);
-
+  res.redirect(url);
 });
 
+app.use(express.static(path.join(__dirname, "public")));
 
-/* =========================
-   START
-========================= */
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-app.listen(PORT, () => {
-
-  console.log(
-    `Shortener running on port ${PORT}`
-  );
-
+app.listen(port, () => {
+  console.log(`Shortener running on port ${port}`);
 });
